@@ -18,11 +18,10 @@ const Home: VoidComponent = () => {
     if (!currentUrl) {
       return;
     }
+    setPrompt("");
     const res = await createLinkMutation.mutateAsync({ link: currentUrl });
     if (res.status === "invalidUrl")
       setPrompt(`${currentUrl} is an invalid URL`);
-    if (res.status === "alreadyCreated")
-      setPrompt(`This url already existed with: ${res.createdSlug}`);
     if (res.status === "ok")
       setPrompt(`${linkPrefix + res.createdSlug} created`);
   };
@@ -32,7 +31,6 @@ const Home: VoidComponent = () => {
         <h1 class="text-5xl font-bold tracking-tight text-white">
           Url shortener
         </h1>
-        {prompt() && <p>{prompt()}</p>}
         <form action="POST" onSubmit={onSubmit} class="flex flex-col gap-12">
           <label class="flex flex-col gap-2">
             Url
@@ -52,6 +50,7 @@ const Home: VoidComponent = () => {
             Create
           </button>
         </form>
+        {prompt() && <p>{prompt()}</p>}
       </div>
     </main>
   );

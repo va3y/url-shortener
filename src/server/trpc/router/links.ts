@@ -1,6 +1,5 @@
-import type { Urls } from "@prisma/client";
 import { nanoid, urlAlphabet } from "nanoid";
-import { isUrl } from "~/utils/isUrl";
+import { z } from "zod";
 
 import { procedure, router } from "../utils";
 
@@ -11,32 +10,27 @@ function calculateLogarithmWithCustomBase(base: number, x: number) {
 }
 
 type HandlerResult = Promise<
-  | { status: "alreadyCreated" | "ok"; createdSlug: string }
-  | { status: "invalidUrl" }
+  { status: "ok"; createdSlug: string } | { status: "invalidUrl" }
 >;
 
 export default router({
   getLinks: procedure.query(({ ctx }) => ctx.prisma.urls.findMany()),
   setLink: procedure
-    .input((input) => input as Pick<Urls, "link">)
+    .input(z.object({ link: z.string() }))
     .mutation(async ({ ctx, input }): HandlerResult => {
-      if (!isUrl(input.link)) return { status: "invalidUrl" };
-
-      const res = await ctx.prisma.urls.findUnique({
-        where: { link: input.link },
-        select: { shortenedSlug: true },
-      });
-      if (res?.shortenedSlug)
-        return { status: "alreadyCreated", createdSlug: res.shortenedSlug };
+      if (!z.string().url().safeParse(input.link).success)
+        return { status: "invalidUrl" };
 
       const totalRows = await ctx.prisma.urls.count({});
 
-      const createRowCall = () =>
-        ctx.prisma.urls.create({
-          data: {
+      const upsertRow = () =>
+        ctx.prisma.urls.upsert({
+          where: { link: input.link },
+          create: {
             link: input.link,
             shortenedSlug: nanoid(
-              // Should probably be stored somewhere else as const
+              // Should probably be stored somewhere else as const,
+              // so count() transaction wont be needed
               Math.ceil(
                 calculateLogarithmWithCustomBase(
                   urlAlphabet.length,
@@ -45,10 +39,10 @@ export default router({
               )
             ),
           },
-          select: { shortenedSlug: true },
+          update: {},
         });
 
-      const createNewUrlResponse = await createRowCall().catch((err) => {
+      const createNewUrlResponse = await upsertRow().catch((err) => {
         // P2002 is a Prisma code for "Unique constraint failed"
         // This probably means that the generated id already existed in db
         // https://www.prisma.io/docs/reference/api-reference/error-reference#error-codes
@@ -57,16 +51,16 @@ export default router({
         throw err;
       });
 
-      if (!("error" in createNewUrlResponse))
+      // id Clash, worth a second try
+      if ("error" in createNewUrlResponse)
         return {
           status: "ok",
-          createdSlug: createNewUrlResponse.shortenedSlug,
+          createdSlug: (await upsertRow()).shortenedSlug,
         };
 
-      // id Clash, worth a second try
       return {
         status: "ok",
-        createdSlug: (await createRowCall()).shortenedSlug,
+        createdSlug: createNewUrlResponse.shortenedSlug,
       };
     }),
 });
