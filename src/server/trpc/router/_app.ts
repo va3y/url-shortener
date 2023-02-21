@@ -1,5 +1,5 @@
 import { router } from "../utils";
-import example from "./example";
+import example from "./links";
 
 export const appRouter = router({
   example,

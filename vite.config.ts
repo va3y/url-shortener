@@ -1,15 +1,10 @@
 import solid from "solid-start/vite";
-import UnoCSS from "unocss/vite";
 import { defineConfig } from "vite";
 import vercel from "solid-start-vercel";
-  
+
 export default defineConfig(() => {
   return {
-    plugins: [
-          solid({ ssr: true, adapter: vercel({ edge: false }) }),
-          UnoCSS(),
-        ],
+    plugins: [solid({ ssr: true, adapter: vercel({ edge: false }) })],
     ssr: { external: ["@prisma/client"] },
   };
 });
-  

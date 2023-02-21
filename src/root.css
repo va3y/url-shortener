@@ -1,1 +1,4 @@
 /* feel free to modify uno in here */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
