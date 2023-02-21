@@ -9,6 +9,15 @@ function logN(base: number, x: number) {
   return Math.log(x) / Math.log(base);
 }
 
+// P2002 is a Prisma error code for "Unique constraint failed"
+// This probably means that the generated id already existed in db
+// https://www.prisma.io/docs/reference/api-reference/error-reference#error-codes
+const isPrismaUniqueConstraintError = (err: unknown) =>
+  typeof err === "object" &&
+  err !== null &&
+  "code" in err &&
+  err.code === "P2002";
+
 type HandlerResult = Promise<
   { status: "ok"; createdSlug: string } | { status: "invalidUrl" }
 >;
@@ -39,11 +48,8 @@ export default router({
           update: {},
         });
 
-      const createNewUrlResponse = await upsertRow().catch((err) => {
-        // P2002 is a Prisma error code for "Unique constraint failed"
-        // This probably means that the generated id already existed in db
-        // https://www.prisma.io/docs/reference/api-reference/error-reference#error-codes
-        if (err.code === "P2002")
+      const createNewUrlResponse = await upsertRow().catch((err: unknown) => {
+        if (isPrismaUniqueConstraintError(err))
           return { error: "idClash", shortenedSlug: null };
         throw err;
       });
