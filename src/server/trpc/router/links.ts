@@ -5,7 +5,7 @@ import { procedure, router } from "../utils";
 
 const UNIQUE_CHARS_TOLERANCE = 0.001;
 
-function calculateLogarithmWithCustomBase(base: number, x: number) {
+function logN(base: number, x: number) {
   return Math.log(x) / Math.log(base);
 }
 
@@ -21,7 +21,7 @@ export default router({
       if (!z.string().url().safeParse(input.link).success)
         return { status: "invalidUrl" };
 
-      const totalRows = await ctx.prisma.urls.count({});
+      const totalRows = await ctx.prisma.urls.count();
 
       const upsertRow = () =>
         ctx.prisma.urls.upsert({
@@ -32,10 +32,7 @@ export default router({
               // Should probably be stored somewhere else as const,
               // so count() transaction wont be needed
               Math.ceil(
-                calculateLogarithmWithCustomBase(
-                  urlAlphabet.length,
-                  totalRows / UNIQUE_CHARS_TOLERANCE
-                )
+                logN(urlAlphabet.length, totalRows / UNIQUE_CHARS_TOLERANCE)
               )
             ),
           },
@@ -43,7 +40,7 @@ export default router({
         });
 
       const createNewUrlResponse = await upsertRow().catch((err) => {
-        // P2002 is a Prisma code for "Unique constraint failed"
+        // P2002 is a Prisma error code for "Unique constraint failed"
         // This probably means that the generated id already existed in db
         // https://www.prisma.io/docs/reference/api-reference/error-reference#error-codes
         if (err.code === "P2002")
