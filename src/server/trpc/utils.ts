@@ -32,4 +32,4 @@ export const withRateLimit = t.middleware(async ({ ctx, next }) => {
   return next({ ctx });
 });
 
-// export const procedure = t.procedure.use(withRateLimit);
+export const procedure = t.procedure;
