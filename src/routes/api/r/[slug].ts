@@ -1,5 +1,5 @@
-import { redirect, ServerError } from "solid-start";
-import { ApiHandler } from "solid-start/api/types";
+import { redirect } from "solid-start";
+import type { ApiHandler } from "solid-start/api/types";
 import { prisma } from "~/server/db/client";
 
 export const GET: ApiHandler = async ({ params }) => {

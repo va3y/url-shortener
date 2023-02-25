@@ -1,18 +1,13 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import type { Middleware } from "solid-start/entry-server";
-import {
-  StartServer,
-  createHandler,
-  renderAsync,
-} from "solid-start/entry-server";
 
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
   limiter: Ratelimit.fixedWindow(20, "10 s"),
 });
 
-const withRateLimit: Middleware =
+export const withRateLimit: Middleware =
   ({ forward }) =>
   async (event) => {
     const ip = event.request.headers.get("x-forwarded-for") ?? "127.0.0.1";
@@ -24,7 +19,7 @@ const withRateLimit: Middleware =
 
     if (!success) {
       return new Response(
-        `Rate limit exceeded, retry in ${new Date(reset).getDate()} seconds`,
+        `Rate limit exceeded, retry in ${(reset - Date.now()) / 1000} seconds`,
         {
           status: 429,
           headers: {
@@ -37,8 +32,3 @@ const withRateLimit: Middleware =
     }
     return forward(event);
   };
-
-export default createHandler(
-  withRateLimit,
-  renderAsync((event) => <StartServer event={event} />)
-);

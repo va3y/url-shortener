@@ -1,3 +1,4 @@
+import type { Urls } from "@prisma/client";
 import { nanoid, urlAlphabet } from "nanoid";
 import { z } from "zod";
 
@@ -13,13 +14,11 @@ function logN(base: number, x: number) {
 // This probably means that the generated id already existed in db
 // https://www.prisma.io/docs/reference/api-reference/error-reference#error-codes
 const isPrismaUniqueConstraintError = (err: unknown) =>
-  typeof err === "object" &&
-  err !== null &&
-  "code" in err &&
-  err.code === "P2002";
+  typeof err === "object" && err && "code" in err && err.code === "P2002";
 
 type HandlerResult = Promise<
-  { status: "ok"; createdSlug: string } | { status: "invalidUrl" }
+  | { status: "ok"; createdSlug: Urls["shortenedSlug"] }
+  | { status: "invalidUrl" }
 >;
 
 export default router({
@@ -54,16 +53,13 @@ export default router({
         throw err;
       });
 
-      // id Clash, worth a second try
-      if ("error" in createNewUrlResponse)
-        return {
-          status: "ok",
-          createdSlug: (await upsertRow()).shortenedSlug,
-        };
-
       return {
         status: "ok",
-        createdSlug: createNewUrlResponse.shortenedSlug,
+        createdSlug:
+          "error" in createNewUrlResponse
+            ? // id Clash, worth a second try
+              (await upsertRow()).shortenedSlug
+            : createNewUrlResponse.shortenedSlug,
       };
     }),
 });

@@ -18,6 +18,8 @@
     "eslint": "^8.34.0",
     "eslint-plugin-solid": "^0.9.4",
     "postcss": "^8.4.21",
+    "prettier": "^2.8.4",
+    "prettier-plugin-tailwindcss": "^0.2.3",
     "prisma": "^4.10.1",
     "solid-start-node": "^0.2.21",
     "solid-start-vercel": "^0.2.21",

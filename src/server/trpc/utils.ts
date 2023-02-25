@@ -11,7 +11,7 @@ const ratelimit = new Ratelimit({
   limiter: Ratelimit.fixedWindow(20, "10 s"),
 });
 
-const withRateLimit = t.middleware(async ({ ctx, next }) => {
+export const withRateLimit = t.middleware(async ({ ctx, next }) => {
   const ip = ctx.req.headers.get("x-forwarded-for") ?? "127.0.0.1";
 
   const { success, pending, limit, reset, remaining } = await ratelimit.limit(
@@ -24,12 +24,12 @@ const withRateLimit = t.middleware(async ({ ctx, next }) => {
   if (!success) {
     throw new TRPCError({
       code: "TOO_MANY_REQUESTS",
-      message: `Rate limit exceeded, retry in ${new Date(
-        reset
-      ).getDate()} seconds`,
+      message: `Rate limit exceeded, retry in ${
+        (reset - Date.now()) / 1000
+      } seconds`,
     });
   }
   return next({ ctx });
 });
 
-export const procedure = t.procedure.use(withRateLimit);
+// export const procedure = t.procedure.use(withRateLimit);

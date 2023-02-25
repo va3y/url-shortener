@@ -13,6 +13,7 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "useUnknownInCatchVariables": true
+    "useUnknownInCatchVariables": true,
+    "skipLibCheck": true
   }
 }
